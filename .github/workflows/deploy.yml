@@ -22,4 +22,5 @@ jobs:
             sudo docker build -t myapp .
             sudo docker stop myapp || true
             sudo docker rm myapp || true
-            sudo docker run -d -p 80:5000 --name myapp myapp
+            sudo docker run -d -p 5000:5000 --name myapp myapp
+            sudo systemctl restart nginx
