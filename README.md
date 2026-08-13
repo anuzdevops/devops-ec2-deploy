@@ -1,55 +1,56 @@
-# CI/CD Pipeline - GitHub Actions to AWS EC2 with Docker
+# DevOps EC2 Deploy - Production Grade CI/CD
 
-Automated deployment pipeline that builds and deploys a Dockerized application to AWS EC2 on every push to main branch.
+A project where I rebuild a production deployment pipeline from scratch, Level by Level in public.
 
-### Architecture
+Live Demo: `http://YOUR_EC2_IP` -> Replace with your IP
 
-Git Push (main) -> GitHub Actions -> SSH -> AWS EC2 -> Docker Build & Run -> Live on Port 80
+## Architecture Evolution
 
+### Level 1: Basic Automation
+User -> EC2 (Port 80) -> Docker App (Port 5000)
+- Direct exposure of app container
+- Manual SSH deployment problem solved with GitHub Actions
 
-### Tech Stack
-- **Cloud:** AWS EC2 (t2.micro), IAM
-- **CI/CD:** GitHub Actions, GitHub Secrets
+### Level 2: Reverse Proxy (Current) ✅
+User -> Nginx (Port 80) -> Docker App (Port 5000)
+- Nginx as Reverse Proxy - App never exposed directly to internet
+- Decoupled Web Server and Application
+- Production-ready with auto-restart and auto-boot
+
+## Tech Stack
+
+- **Cloud:** AWS EC2 (Ubuntu), IAM with MFA
 - **Containers:** Docker
-- **App:** Python Flask
-- **OS:** Ubuntu 22.04
+- **Web Server:** Nginx (Reverse Proxy)
+- **CI/CD:** GitHub Actions + GitHub Secrets + SSH
+- **OS:** Linux
 
-### How It Works
-1. Code is pushed to the `main` branch
-2. Workflow `.github/workflows/deploy.yml` triggers
-3. GitHub Actions connects to EC2 via SSH using stored secrets
-4. EC2 executes:
+## What I Learned in Level 2
+
+- Why we never expose app containers directly on port 80
+- How Nginx reverse proxy works (`proxy_pass`)
+- Port mapping: `5000:5000` for internal app, `80` for Nginx
+- Updating CI/CD to handle infra changes (`systemctl restart nginx`)
+- Production essentials: `--restart unless-stopped` and `systemctl enable`
+
+## Project Roadmap
+
+- ✅ **Level 1: Automated Deployment** - CI/CD with GitHub Actions (Tag: `level-1-complete`)
+- ✅ **Level 2: Nginx Reverse Proxy** - Production-grade architecture (Tag: `level-2-complete`)
+- [ ] **Level 3: Terraform - Infra as Code** - Recreate entire infra with `terraform apply` (Next)
+- [ ] **Level 4: Monitoring & SSL** - CloudWatch + Let's Encrypt HTTPS
+
+## Deployment Flow
+
+Push to `main` -> GitHub Actions connects via SSH -> Pulls code on EC2 -> Builds Docker image -> Runs on 5000 -> Restarts Nginx -> Live in ~40 seconds.
+
+No manual SSH needed.
+
+## How to Run Locally
+
 ```bash
-git pull origin main
 docker build -t myapp .
-docker stop myapp || true
-docker rm myapp || true
-docker run -d -p 80:5000 --name myapp myapp
-
-Project Structure
-.
-├── app.py
-├── Dockerfile
-├── requirements.txt
-└──.github/
-    └── workflows/
-        └── deploy.yml
+docker run -d -p 5000:5000 --restart unless-stopped --name myapp myapp
 ```
 
-### Features
-- No manual deployment via SSH
-- Secure secret management with GitHub Secrets
-- IAM best practices - No root account usage
-- Containerized deployment for consistency
-
-### Required Secrets
-Configure these in GitHub > Settings > Secrets and variables > Actions:
-- `EC2_HOST` - EC2 public IP address
-- `EC2_USER` - EC2 username (ubuntu)
-- `EC2_SSH_KEY` - Private SSH key (.pem file content)
-
-### Roadmap
-- ✅ Level 1: Automated EC2 deployment - DONE
-- ⏳ Level 2: Nginx reverse proxy
-- ⏳ Level 3: Infrastructure as Code with Terraform
-- ⏳ Level 4: Monitoring with CloudWatch
+**IMPORTANT:** Replace `http://YOUR_EC2_IP` with your actual EC2 IP before committing.
