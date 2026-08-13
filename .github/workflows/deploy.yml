@@ -17,10 +17,33 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Fix: Clone if folder doesn't exist (for new Terraform EC2)
+            if [ ! -d ~/devops-ec2-deploy ]; then
+              cd ~
+              git clone https://github.com/anuzdevops/devops-ec2-deploy.git
+            fi
+            
             cd ~/devops-ec2-deploy
             git pull origin main
+            
+            # Your build - keep same name myapp
             sudo docker build -t myapp .
             sudo docker stop myapp || true
             sudo docker rm myapp || true
             sudo docker run -d -p 5000:5000 --restart unless-stopped --name myapp myapp
-            sudo systemctl restart nginx
+            
+            # Fix Nginx config - ensures it points to 5000
+            sudo bash -c 'cat > /etc/nginx/sites-available/default <<EOF
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                location / {
+                    proxy_pass http://127.0.0.1:5000;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                }
+            }
+            EOF'
+            sudo nginx -t && sudo systemctl restart nginx
+            
+            sudo docker ps
