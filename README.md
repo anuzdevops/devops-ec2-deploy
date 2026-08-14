@@ -1,55 +1,26 @@
-# CI/CD Pipeline - GitHub Actions to AWS EC2 with Docker
+# DevOps EC2 Deploy - Level 2: Manual EC2 + Nginx + CI/CD
 
-Automated deployment pipeline that builds and deploys a Dockerized application to AWS EC2 on every push to main branch.
+> Branch: `level-2-nginx` | Tag: `level-2-complete`
 
-### Architecture
+This branch represents Level 2 milestone - Manual EC2 provisioning with Nginx reverse proxy and GitHub Actions.
 
-Git Push (main) -> GitHub Actions -> SSH -> AWS EC2 -> Docker Build & Run -> Live on Port 80
+## What was built in Level 2
 
+- **EC2:** Ubuntu 22.04, t2.micro, manually created via AWS Console
+- **Security Group:** Ports 22 (SSH), 80 (HTTP), 5000 (app)
+- **On EC2:** Docker, Nginx, Git installed manually
+- **App:** `app.py` (Python Flask) + `Dockerfile` + `requirements.txt`
+- **Nginx:** Reverse proxy `80 -> 5000` to avoid exposing Docker directly
 
-### Tech Stack
-- **Cloud:** AWS EC2 (t2.micro), IAM
-- **CI/CD:** GitHub Actions, GitHub Secrets
-- **Containers:** Docker
-- **App:** Python Flask
-- **OS:** Ubuntu 22.04
+## CI/CD (Level 2)
 
-### How It Works
-1. Code is pushed to the `main` branch
-2. Workflow `.github/workflows/deploy.yml` triggers
-3. GitHub Actions connects to EC2 via SSH using stored secrets
-4. EC2 executes:
+`.github/workflows/deploy.yml`:
+- Trigger: push to `level-2-nginx` / `main`
+- SSH via appleboy/ssh-action
+- Steps: `git pull` → `docker build -t myapp` → `docker run -p 5000:5000`
+
+## How to use this branch
+
 ```bash
-git pull origin main
-docker build -t myapp .
-docker stop myapp || true
-docker rm myapp || true
-docker run -d -p 80:5000 --name myapp myapp
-
-Project Structure
-.
-├── app.py
-├── Dockerfile
-├── requirements.txt
-└──.github/
-    └── workflows/
-        └── deploy.yml
-```
-
-### Features
-- No manual deployment via SSH
-- Secure secret management with GitHub Secrets
-- IAM best practices - No root account usage
-- Containerized deployment for consistency
-
-### Required Secrets
-Configure these in GitHub > Settings > Secrets and variables > Actions:
-- `EC2_HOST` - EC2 public IP address
-- `EC2_USER` - EC2 username (ubuntu)
-- `EC2_SSH_KEY` - Private SSH key (.pem file content)
-
-### Roadmap
-- ✅ Level 1: Automated EC2 deployment - DONE
-- ⏳ Level 2: Nginx reverse proxy
-- ⏳ Level 3: Infrastructure as Code with Terraform
-- ⏳ Level 4: Monitoring with CloudWatch
+git checkout level-2-nginx
+# EC2_HOST must point to manual EC2 IP
