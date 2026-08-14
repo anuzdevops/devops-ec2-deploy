@@ -1,3 +1,20 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+
+  backend "s3" {
+    bucket         = "devops-tfstate-anuj-2026"
+    key            = "devops-app/terraform.tfstate"
+    region         = "eu-north-1"
+    use_lockfile   = true
+    encrypt        = true
+  }
+}
+
 provider "aws" {
   region = "eu-north-1"
 }
@@ -58,6 +75,6 @@ resource "aws_instance" "app_server" {
   user_data = file("user_data.sh")
 
   tags = {
-    Name = "DevOps-Level-3-Terraform"
+    Name = "DevOps-Level-4-Remote-State"
   }
 }
